@@ -52,20 +52,119 @@ function initThemeMode() {
 	const themeBtn = document.getElementById("themeBtn");
 	if (!themeBtn) return;
 
+	const sunIcon = themeBtn.querySelector('.sun-icon');
+	const moonIcon = themeBtn.querySelector('.moon-icon');
+	if (!sunIcon || !moonIcon) return;
+
 	const savedTheme = localStorage.getItem("theme");
 	if (savedTheme === "light") {
 		document.body.classList.add("light");
-		themeBtn.textContent = '🌙';
+		sunIcon.classList.add("hidden");
+		moonIcon.classList.remove("hidden");
 	} else {
-		themeBtn.textContent = '☀️';
+		sunIcon.classList.remove("hidden");
+		moonIcon.classList.add("hidden");
 	}
 
 	themeBtn.addEventListener("click", () => {
+		// Add spinning animation
+		themeBtn.classList.add("spinning");
+		
 		const isLight = document.body.classList.toggle("light");
 		localStorage.setItem("theme", isLight ? "light" : "dark");
-		themeBtn.textContent = isLight ? '🌙' : '☀️';
+		
+		// Toggle icon visibility with smooth transition
+		if (isLight) {
+			sunIcon.classList.add("hidden");
+			moonIcon.classList.remove("hidden");
+		} else {
+			sunIcon.classList.remove("hidden");
+			moonIcon.classList.add("hidden");
+		}
+		
+		// Create ripple effect
+		createRipple(themeBtn);
+		
+		// Remove spinning class after animation
+		setTimeout(() => {
+			themeBtn.classList.remove("spinning");
+		}, 600);
+		
+		// Trigger a subtle page transition effect
+		document.body.style.opacity = "0.98";
+		setTimeout(() => {
+			document.body.style.opacity = "1";
+		}, 150);
+	});
+	
+	// Add smooth transitions to all elements that have background colors
+	const styleSheet = document.createElement('style');
+	styleSheet.textContent = `
+		* {
+			transition: background-color 0.8s cubic-bezier(0.4, 0, 0.2, 1), 
+						color 0.8s cubic-bezier(0.4, 0, 0.2, 1),
+						border-color 0.8s cubic-bezier(0.4, 0, 0.2, 1),
+						box-shadow 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+		}
+	`;
+	document.head.appendChild(styleSheet);
+	
+	// Magnetic cursor effect on hover
+	themeBtn.addEventListener('mousemove', (e) => {
+		const rect = themeBtn.getBoundingClientRect();
+		const centerX = rect.left + rect.width / 2;
+		const centerY = rect.top + rect.height / 2;
+		
+		const distance = Math.sqrt(Math.pow(e.clientX - centerX, 2) + Math.pow(e.clientY - centerY, 2));
+		
+		if (distance < 100) {
+			const angle = Math.atan2(e.clientY - centerY, e.clientX - centerX);
+			const pull = Math.max(0, (100 - distance) / 100) * 8;
+			themeBtn.style.setProperty('--pull-x', Math.cos(angle) * pull + 'px');
+			themeBtn.style.setProperty('--pull-y', Math.sin(angle) * pull + 'px');
+		}
+	});
+	
+	themeBtn.addEventListener('mouseleave', () => {
+		themeBtn.style.setProperty('--pull-x', '0px');
+		themeBtn.style.setProperty('--pull-y', '0px');
 	});
 }
+
+function createRipple(element) {
+	const rect = element.getBoundingClientRect();
+	const size = Math.max(rect.width, rect.height);
+	const x = rect.width / 2;
+	const y = rect.height / 2;
+	
+	const ripple = document.createElement('span');
+	ripple.style.position = 'absolute';
+	ripple.style.width = size + 'px';
+	ripple.style.height = size + 'px';
+	ripple.style.left = (x - size / 2) + 'px';
+	ripple.style.top = (y - size / 2) + 'px';
+	ripple.style.background = 'radial-gradient(circle, rgba(255,255,255,0.6), transparent)';
+	ripple.style.borderRadius = '50%';
+	ripple.style.transform = 'scale(0)';
+	ripple.style.animation = 'themeRipple 0.6s ease-out';
+	ripple.style.pointerEvents = 'none';
+	ripple.style.zIndex = '1';
+	
+	element.appendChild(ripple);
+	setTimeout(() => ripple.remove(), 600);
+}
+
+// Add ripple animation
+const styleSheet = document.createElement('style');
+styleSheet.textContent = `
+	@keyframes themeRipple {
+		to {
+			transform: scale(2);
+			opacity: 0;
+		}
+	}
+`;
+document.head.appendChild(styleSheet);
 
 function initParticles() {
 	if (window.particlesJS) {
